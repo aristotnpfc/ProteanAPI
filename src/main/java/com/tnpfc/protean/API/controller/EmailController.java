@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import com.tnpfc.protean.API.DTO.EmailPayLoad;
 import com.tnpfc.protean.API.DTO.EmailVerify;
 import com.tnpfc.protean.API.DTO.protean_config;
@@ -66,26 +69,31 @@ public class EmailController {
 	public String VerifyEmail(@RequestBody EmailVerify email) {
 		seqId = sequenceDao.getNextVal();
 		String plain_data="";
+		
+		logger.info("API Recieved from "+email.getUserid());
+		
 		try {
 			protean_config config = apirep.findByConfigtype("TnpfcAPI");
 			String AccessToken = "Bearer "+config.getAccess_token();
-			logger.info("AccessToken=>"+AccessToken);
-		
-			
-			String data =
-				    "{\r\n" +
-				    "  \"email\": \"" + email.getEmailid() + "\",\r\n" +
-				    "  \"version\": \"2.1\",\r\n" +
-				    "  \"clientData\": {\r\n" +
-				    "    \"caseId\": \"" + seqId +"\" \r\n" +
-				    "  }\r\n" +
-				    "}";
+			logger.info("AccessToken=>"+AccessToken);			
+				
+			Map<String, Object> payload = new HashMap<>();
+			payload.put("email", email.getEmailid());
+			payload.put("version", "2.1");
 
+			Map<String, String> clientData = new HashMap<>();
+			clientData.put("caseId", String.valueOf(seqId));
+
+			payload.put("clientData", clientData);
+
+			// Convert to JSON string
+			ObjectMapper mappernew = new ObjectMapper();
+			String jsonBody = mappernew.writeValueAsString(payload);
 			
-			logger.info("data=>"+data);
+			logger.info("data=>"+jsonBody);
 		
 		
-			String JsonValue = ProTeanEncr.mainEncryption(data,publicKey,privateKey,getRandomString());
+			String JsonValue = ProTeanEncr.mainEncryption(jsonBody,publicKey,privateKey,getRandomString());
 			logger.info(JsonValue);
 			
 			URL url = new URL(EmailUrl);
@@ -119,9 +127,9 @@ public class EmailController {
 	        System.out.println("Response Code: " + response.toString());    
 	      
 	       
-	        EmailPayLoad payload = mapper.readValue(response.toString(), EmailPayLoad.class);
+	        EmailPayLoad payloadResponse = mapper.readValue(response.toString(), EmailPayLoad.class);
 	       
-	        plain_data = proTeanDecry.mainDecryption(payload.getData(), payload.getSymmetricKey(), payload.getHash(), privateKey);
+	        plain_data = proTeanDecry.mainDecryption(payloadResponse.getData(), payloadResponse.getSymmetricKey(), payloadResponse.getHash(), privateKey);
 	        
 	        System.out.println("Final Data: " + plain_data);
 			

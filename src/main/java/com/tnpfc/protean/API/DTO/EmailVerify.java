@@ -4,7 +4,7 @@ public class EmailVerify {
 
 	public String emailid;
 	public String userid;
-	
+	public String randomid;
 	
 	public String getEmailid() {
 		return emailid;
@@ -17,6 +17,12 @@ public class EmailVerify {
 	}
 	public void setUserid(String userid) {
 		this.userid = userid;
+	}
+	public String getRandomid() {
+		return randomid;
+	}
+	public void setRandomid(String randomid) {
+		this.randomid = randomid;
 	}
 	
 	
