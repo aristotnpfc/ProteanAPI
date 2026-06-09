@@ -6,6 +6,7 @@ public class BankAccount {
 	public String accountno;
 	public String txntype;
 	public String userid;
+	public String transid;
 	
 	
 	public String getProgramid() {
@@ -38,6 +39,14 @@ public class BankAccount {
 	public void setUserid(String userid) {
 		this.userid = userid;
 	}
+	public String getTransid() {
+		return transid;
+	}
+	public void setTransid(String transid) {
+		this.transid = transid;
+	}
+	
+	
 	
 	
 	
