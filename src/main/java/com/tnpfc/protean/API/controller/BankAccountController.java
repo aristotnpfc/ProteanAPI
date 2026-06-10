@@ -34,8 +34,7 @@ import com.tnpfc.protean.API.Util.UtilityMAIN;
 @RequestMapping("/Bank")
 public class BankAccountController {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(BankAccountController.class);
+    private static final Logger logger = LoggerFactory.getLogger(BankAccountController.class);
 
     private static final String CONFIG = "config";
 
@@ -70,7 +69,7 @@ public class BankAccountController {
 
         try {
 
-            protean_config config =apirep.findByConfigtype("TnpfcAPI");
+            protean_config config =apirep.findByConfigtype("TnpfcBanK");
             String accessToken ="Bearer " + config.getAccess_token();
             String reqId = MAIN.generateUniqueNumber();
             logger.info("Request Id : {}", reqId);
