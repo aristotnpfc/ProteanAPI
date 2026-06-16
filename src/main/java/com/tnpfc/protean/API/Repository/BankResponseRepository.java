@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.tnpfc.protean.API.DTO.BankApiResponse;
 
 @Repository
-public interface BankResponseRepository extends JpaRepository<BankApiResponse, String>{
+public interface BankResponseRepository extends JpaRepository<BankApiResponse, Long>{
 	
 }
