@@ -20,13 +20,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonObject;
 import com.tnpfc.protean.API.DTO.BankAccount;
+import com.tnpfc.protean.API.DTO.BankApiResponse;
 import com.tnpfc.protean.API.DTO.EmailPayLoad;
 import com.tnpfc.protean.API.DTO.protean_config;
 import com.tnpfc.protean.API.PanEnc.ProteanDecryption;
 import com.tnpfc.protean.API.PanEnc.ProteanEncryption;
+import com.tnpfc.protean.API.Repository.BankResponseRepository;
 import com.tnpfc.protean.API.Repository.ProteanConfigRepository;
 import com.tnpfc.protean.API.Util.UtilityMAIN;
 
@@ -52,10 +55,12 @@ public class BankAccountController {
 
     @Autowired
     private ProteanDecryption proTeanDecry;
+    
+    @Autowired
+    private BankResponseRepository BanRep;
 
     static {
         ResourceBundle bundle = ResourceBundle.getBundle(CONFIG);
-
         BankUrl = bundle.getString("BankUrl");
         privateKey = bundle.getString("privateKey");
         publicKey = bundle.getString("publicKey");
@@ -65,10 +70,9 @@ public class BankAccountController {
     @PostMapping("/VerifyBank")
     public ResponseEntity<?> VerifyBank(@RequestBody BankAccount bank) {
 
+    	BankApiResponse bankr=new BankApiResponse();
         HttpURLConnection conn = null;
-
         try {
-
             protean_config config =apirep.findByConfigtype("TnpfcBanK");
             String accessToken ="Bearer " + config.getAccess_token();
             String reqId = MAIN.generateUniqueNumber();
@@ -76,7 +80,6 @@ public class BankAccountController {
 
             // REQUEST JSON
             JsonObject json = new JsonObject();
-
             json.addProperty("entityId", entityId);
             json.addProperty("programId", bank.getProgramid());
             json.addProperty("requestId", reqId);
@@ -125,7 +128,7 @@ public class BankAccountController {
 
             // JSON MAPPING
             ObjectMapper mapper = new ObjectMapper();
-            EmailPayLoad payload =mapper.readValue( response.toString(),EmailPayLoad.class);
+            EmailPayLoad payload =mapper.readValue(response.toString(),EmailPayLoad.class);
 
             // DECRYPT
             String plainData =proTeanDecry.mainDecryption(payload.getData(),payload.getSymmetricKey(),payload.getHash(),privateKey);
@@ -133,6 +136,32 @@ public class BankAccountController {
             logger.info("Final Response : {}", plainData);
 
             // SAVE TO DB HERE
+            
+            ObjectMapper mapp = new ObjectMapper();
+            JsonNode node = mapper.readTree(plainData);
+            
+            if (node.has("status")&& "ACCEPTED".equalsIgnoreCase(node.get("status").asText())) {
+            	bankr.setProgram_id(bank.getProgramid());
+            	bankr.setRequest_id(bank.getTransid());
+            	bankr.setIfdsccode(bank.getIfsccode());
+            	bankr.setAcnum(bank.getAccountno());
+            	bankr.setTxntype(bank.getTxntype());
+            	bankr.setStatus_by(bank.getUserid());
+            	bankr.setStatusCode(node.path("statusCode").asText());
+            	bankr.setStatus(node.path("status").asText());
+            	bankr.setAcValidationStatus(node.path("acValidationStatus").asText());
+            	bankr.setMessage(node.path("message").asText());
+            	bankr.setRequestId(node.path("requestId").asText());
+            	bankr.setResponseId(node.path("responseId").asText());
+            	bankr.setNameAtBank(node.path("nameAtBank").asText());
+            	bankr.setCustAcctNo(node.path("custAcctNo").asText());
+            	bankr.setCustIfsc(node.path("custIfsc").asText());
+            	bankr.setBankCode(node.path("bankCode").asText());
+            	bankr.setMethodUsed(node.path("methodUsed").asText());
+            	bankr.setUtr(node.path("utr").asText());
+            	bankr.setResponsestring(plainData);
+            	BanRep.save(bankr);            	
+            }
 
             // RETURN CUSTOM RESPONSE
             return ResponseEntity.ok(plainData);

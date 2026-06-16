@@ -23,16 +23,16 @@ public class protean_config {
 	@Column(name="client_id")
 	private String client_id;
 	
-	@Column (name="access_token")
+	@Column(name="access_token")
 	private String access_token;
 	
-	@Column (name="application_name")
+	@Column(name="application_name")
 	private String application_name;
 	
-	@Column (name="status")
+	@Column(name="status")
 	private String status;
 	
-	@Column (name="status_dt")
+	@Column(name="status_dt")
 	private Date status_dt;
 	
 	
